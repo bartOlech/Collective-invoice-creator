@@ -36,9 +36,9 @@ def getOrders(request):
     convertTimestampDateTo = int(timestampDateTo.replace('.0', ''))
 
     # REQUEST GET ONLY 100 ORDERS IN THE ONE TIME!!!
-    ordersCount = 100;
-    lastLocalTimestamp = timestampDateFrom;
-    orders = [];
+    ordersCount = 100
+    lastLocalTimestamp = timestampDateFrom
+    orders = []
 
     # Break loop if the orders value will be less than 100 or if timeTo will be smaller than lastLocalTimestamp
     while ordersCount == 100 and int(lastLocalTimestamp.replace('.0', '')) < convertTimestampDateTo:
@@ -66,13 +66,16 @@ def getOrders(request):
                      x['date_confirmed'] <= convertTimestampDateTo + (24*3600)
                      # conditions without invoice
                      and x['want_invoice'] == '0'
+                     and x['order_status_id'] == 48132
                      , orders))
 
     finalCounter = 0;
     for el in fl:
         finalCounter += 1
-        # list of order dates
-        # print(datetime.datetime.utcfromtimestamp(el['date_confirmed']).strftime('%Y-%m-%d'))
+        order_id = el['order_id']
+        for product in el['products']:
+            product['order_id'] = order_id
+
 
     print(f'Końcowy licznik: {finalCounter}')
 
@@ -91,18 +94,37 @@ def getOrders(request):
         )
 
         # Start from the first cell. Rows and columns are zero indexed.
+        # row = 0
+        # col = 0
+
         row = 0
-        col = 0
+        column = 0
+
+        titleRow = ['Id zamówienia', 'Data zamówienia', 'Wystawił', 'Imię i nazwisko kupującego', 'Adres kupującego', 'Wartość netto', 'VAT', 'Wartość brutto']
+
+        worksheet.set_column(0, 7, 25)
+        # Create first row
+        for el in titleRow:
+            worksheet.write(row, column, el)
+            column += 1
+
+        row += 1
 
         # Iterate over the data and write it out row by row.
-        for item, cost in (expenses):
-            worksheet.write(row, col, item)
-            worksheet.write(row, col + 1, cost)
+        for item in fl:
+            worksheet.write(row, 0, item['order_id'])
+            worksheet.write(row, 1, datetime.datetime.utcfromtimestamp(item['date_confirmed']).strftime('%d-%m-%Y'))
+            worksheet.write(row, 2, 'Bartłomiej Olech')
+            worksheet.write(row, 3, item['delivery_fullname'])
+            worksheet.write(row, 4, f"{item['invoice_address']} {item['invoice_postcode']} {item['invoice_city']}")
+            worksheet.write(row, 5, 'Wartość netto')
+            worksheet.write(row, 6, '23 %')
+            worksheet.write(row, 7, 'Wartość brutto')
             row += 1
 
         # Write a total using a formula.
-        worksheet.write(row, 0, 'Total')
-        worksheet.write(row, 1, '=SUM(B1:B4)')
+        # worksheet.write(row, 0, 'Total')
+        # worksheet.write(row, 1, '=SUM(B1:B4)')
 
         workbook.close()
 
