@@ -35,18 +35,31 @@ def getOrders(request):
     # remove period from the timestamp and convert to int
     convertTimestampDateTo = int(timestampDateTo.replace('.0', ''))
 
-    parameters = '{"date_from": "'+timestampDateFrom+'", "get_unconfirmed_orders": false}'
+    # REQUEST GET ONLY 100 ORDERS IN THE ONE TIME!!!
+    ordersCount = 100;
+    lastLocalTimestamp = timestampDateFrom;
+    orders = [];
 
-    data = {
-        'token': BASELINKER_API,
-        'method': 'getOrders',
-        'parameters': parameters
-    }
+    # Break loop if the orders value will be less than 100 or if timeTo will be smaller than lastLocalTimestamp
+    while ordersCount == 100 and int(lastLocalTimestamp.replace('.0', '')) < convertTimestampDateTo:
+        parameters = '{"date_from": "' + lastLocalTimestamp + '", "get_unconfirmed_orders": false}'
 
-    response = requests.post('https://api.baselinker.com/connector.php', data=data)
+        data = {
+            'token': BASELINKER_API,
+            'method': 'getOrders',
+            'parameters': parameters
+        }
 
-    orders = response.json()['orders']
-    # example of get value -> orders[0]['order_id']
+        response = requests.post('https://api.baselinker.com/connector.php', data=data)
+
+        orders.extend(response.json()['orders'])
+        ordersCount = len(response.json()['orders'])
+        # Increase 1 second, get two part of 100 lists
+        lastLocalTimestamp = str(response.json()['orders'][-1]['date_confirmed'] + 1)
+
+        print(f'Lokalna ilość: {ordersCount}')
+
+    print(f'Ilość zamówień (teraz algorytm będzie usuwał zbędne z ostatniej 100: {len(orders)}');
 
     # Filter the list leaving only the matched dates
     fl = list(filter(lambda x:
@@ -55,12 +68,13 @@ def getOrders(request):
                      and x['want_invoice'] == '0'
                      , orders))
 
-    counter = 0;
+    finalCounter = 0;
     for el in fl:
-        counter += 1
-        print(datetime.datetime.utcfromtimestamp(el['date_confirmed']).strftime('%Y-%m-%d'))
+        finalCounter += 1
+        # list of order dates
+        # print(datetime.datetime.utcfromtimestamp(el['date_confirmed']).strftime('%Y-%m-%d'))
 
-    print(f'Licznik: {counter}')
+    print(f'Końcowy licznik: {finalCounter}')
 
     # Create Allegro Excel file
     if (request.POST.get('submit-allegro')):
