@@ -11,6 +11,10 @@
     <title>Document</title>
 </head>
 <body>
+<p style="text-align: center; font-size: .8em">Data końcowa działa <b>włącznie</b> (wybierać do ostatniego dnia miesiąca)</p>
+<p style="text-align: center; font-size: .8em">Trzeba wybrać datę początek i koniec</p>
+<p style="text-align: center; font-size: .8em">Lewy przycisk (Zorganizowany) nic nie robi</p>
+
     <form style="display: flex; flex-direction: column; align-items: center" action="getOrders" method="POST">
         {% csrf_token %}
         <div style="display: flex; width: 390px; justify-content: space-between; align-items: center">
@@ -20,7 +24,7 @@
             <input type="date" name='date-to'/>
         </div>
         <div style="margin-top: 20px">
-            <input style="border: none; width: 130px; height: 30px; color: #fff; background: #000; cursor: pointer;" value="Zorganizowany" type="submit" name="submit-zor"/>
+            <input style="border: none; width: 130px; height: 30px; color: #fff; background: #000; cursor: pointer;" value="Zorganizowany" type="submit" name="submit-zor" required/>
             <input style="border: none; width: 130px; height: 30px; color: #fff; background: #ff5a00; cursor: pointer;"  value="Allegro + Zor" type="submit" name="submit-allegro"/>
         </div>
     </form>
