@@ -5,6 +5,8 @@ import time
 import datetime
 import os
 import xlsxwriter
+import math
+import wget
 
 # V env
 from dotenv import load_dotenv
@@ -85,14 +87,6 @@ def getOrders(request):
         workbook = xlsxwriter.Workbook('Output/ZestawienieSprzedazyAllegro.xlsx')
         worksheet = workbook.add_worksheet()
 
-        # Some data we want to write to the worksheet.
-        expenses = (
-            ['Rent', 1000],
-            ['Gas', 100],
-            ['Food', 300],
-            ['Gym', 50],
-        )
-
         # Start from the first cell. Rows and columns are zero indexed.
         # row = 0
         # col = 0
@@ -100,31 +94,60 @@ def getOrders(request):
         row = 0
         column = 0
 
-        titleRow = ['Id zamówienia', 'Data zamówienia', 'Wystawił', 'Imię i nazwisko kupującego', 'Adres kupującego', 'Wartość netto', 'VAT', 'Wartość brutto']
+        cell_format_title = workbook.add_format({'bold': True, 'bg_color': '#6387C9', 'font_color': 'white'})
+        titleRow = ['Id zamówienia', 'Data zamówienia', 'Wystawił', 'Imię i nazwisko kupującego', 'Adres kupującego', 'Wartość netto (zł)', 'VAT', 'Wartość brutto (zł)']
 
         worksheet.set_column(0, 7, 25)
         # Create first row
         for el in titleRow:
-            worksheet.write(row, column, el)
+            worksheet.write(row, column, el, cell_format_title)
             column += 1
 
         row += 1
 
         # Iterate over the data and write it out row by row.
         for item in fl:
+            deliveryPrice = item['delivery_price']
+            productPrice = 0
+            for product in item['products']:
+                productPrice += product['price_brutto'] * product['quantity']
+
+            productPriceBruttoWithDelivery = productPrice + deliveryPrice
+
             worksheet.write(row, 0, item['order_id'])
             worksheet.write(row, 1, datetime.datetime.utcfromtimestamp(item['date_confirmed']).strftime('%d-%m-%Y'))
             worksheet.write(row, 2, 'Bartłomiej Olech')
             worksheet.write(row, 3, item['delivery_fullname'])
             worksheet.write(row, 4, f"{item['invoice_address']} {item['invoice_postcode']} {item['invoice_city']}")
-            worksheet.write(row, 5, 'Wartość netto')
-            worksheet.write(row, 6, '23 %')
-            worksheet.write(row, 7, 'Wartość brutto')
+            worksheet.write(row, 5, math.ceil((productPriceBruttoWithDelivery / 1.23)*100)/100)
+            worksheet.write(row, 6, '23')
+            worksheet.write(row, 7, productPriceBruttoWithDelivery)
             row += 1
 
-        # Write a total using a formula.
-        # worksheet.write(row, 0, 'Total')
-        # worksheet.write(row, 1, '=SUM(B1:B4)')
+        # Set cell color
+        cell_format_total = workbook.add_format({'bold': True, 'bg_color': '#1A936F', 'font_color': 'white'})
+
+        # Total price
+        worksheet.write(row, 4, 'Razem', cell_format_total)
+        worksheet.write(row, 5, f'=SUM(F1:F{row})', cell_format_total)
+        worksheet.write(row, 7, f'=SUM(H1:H{row})', cell_format_total)
+
+        titleProductRow = ['Id zamówienia', 'Nazwa produktu', 'Ilość', 'Cena brutto (1 szt.)']
+        column = 0
+        row += 2
+        # Create name row
+        for el in titleProductRow:
+            worksheet.write(row, column, el, cell_format_title)
+            column += 1
+        row += 1
+        for item in fl:
+            for product in item['products']:
+                worksheet.write(row, 0, product['order_id'])
+                worksheet.write(row, 1, product['name'])
+                worksheet.write(row, 2, product['quantity'])
+                worksheet.write(row, 3, product['price_brutto'])
+                row += 1
+
 
         workbook.close()
 
