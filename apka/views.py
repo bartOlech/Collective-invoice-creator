@@ -95,9 +95,9 @@ def getOrders(request):
         column = 0
 
         cell_format_title = workbook.add_format({'bold': True, 'bg_color': '#6387C9', 'font_color': 'white'})
-        titleRow = ['Id zamówienia', 'Data zamówienia', 'Wystawił', 'Imię i nazwisko kupującego', 'Adres kupującego', 'Wartość netto (zł)', 'VAT', 'Wartość brutto (zł)']
+        titleRow = ['Id zamówienia', 'Data zamówienia', 'Wystawił', 'Imię i nazwisko kupującego', 'Adres kupującego', 'Wartość netto (zł)', 'VAT', 'Wartość VAT', 'Wartość brutto (zł)']
 
-        worksheet.set_column(0, 7, 25)
+        worksheet.set_column(0, 8, 25)
         # Create first row
         for el in titleRow:
             worksheet.write(row, column, el, cell_format_title)
@@ -121,7 +121,8 @@ def getOrders(request):
             worksheet.write(row, 4, f"{item['invoice_address']} {item['invoice_postcode']} {item['invoice_city']}")
             worksheet.write(row, 5, math.ceil((productPriceBruttoWithDelivery / 1.23)*100)/100)
             worksheet.write(row, 6, '23')
-            worksheet.write(row, 7, productPriceBruttoWithDelivery)
+            worksheet.write(row, 7, productPriceBruttoWithDelivery - (math.ceil((productPriceBruttoWithDelivery / 1.23)*100)/100))
+            worksheet.write(row, 8, productPriceBruttoWithDelivery)
             row += 1
 
         # Set cell color
@@ -129,8 +130,9 @@ def getOrders(request):
 
         # Total price
         worksheet.write(row, 4, 'Razem', cell_format_total)
-        worksheet.write(row, 5, f'=SUM(F1:F{row})', cell_format_total)
-        worksheet.write(row, 7, f'=SUM(H1:H{row})', cell_format_total)
+        worksheet.write(row, 5, f'=SUM(F2:F{row})', cell_format_total)
+        worksheet.write(row, 7, f'=SUM(H2:H{row})', cell_format_total)
+        worksheet.write(row, 8, f'=SUM(I2:I{row})', cell_format_total)
 
         titleProductRow = ['Id zamówienia', 'Nazwa produktu', 'Ilość', 'Cena brutto (1 szt.)']
         column = 0
