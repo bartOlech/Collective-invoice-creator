@@ -119,9 +119,10 @@ def getOrders(request):
             worksheet.write(row, 2, 'Bartłomiej Olech')
             worksheet.write(row, 3, item['delivery_fullname'])
             worksheet.write(row, 4, f"{item['invoice_address']} {item['invoice_postcode']} {item['invoice_city']}")
-            worksheet.write(row, 5, math.ceil((productPriceBruttoWithDelivery / 1.23)*100)/100)
+            # Zaokrąglone do 6 miejsc po przecinku, bo gdy bedzie duzo wartości, tysięczne końcówki też są liczone
+            worksheet.write(row, 5, round(productPriceBruttoWithDelivery / 1.23, 6))
             worksheet.write(row, 6, '23')
-            worksheet.write(row, 7, productPriceBruttoWithDelivery - (math.ceil((productPriceBruttoWithDelivery / 1.23)*100)/100))
+            worksheet.write(row, 7, productPriceBruttoWithDelivery - round(productPriceBruttoWithDelivery / 1.23, 6))
             worksheet.write(row, 8, productPriceBruttoWithDelivery)
             row += 1
 
